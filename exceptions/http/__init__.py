@@ -11,6 +11,7 @@ from exceptions.http.core import (
     NotImplemented,
     BadGateway,
     BadRequest,
+    InternalServerError,
 )
 
 __all__ = (
@@ -26,4 +27,5 @@ __all__ = (
     "NotImplemented",
     "BadGateway",
     "BadRequest",
+    "InternalServerError",
 )

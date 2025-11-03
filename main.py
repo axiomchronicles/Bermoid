@@ -1,5 +1,4 @@
-from settings.base import settings
 
-# settings.configure()
 
-print(settings.NAME)
+async def main(request):
+    return {"msg": "hello"}
