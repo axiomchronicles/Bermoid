@@ -30,6 +30,7 @@ from typing import (
 from _types import Scope, Receive, Send, Lifespan, StatefulLifespan, ASGIApp
 from wrappers.request import Request
 from wrappers.response import Response
+from wrappers.parser import RequestParser
 from wrappers.websocket import WebSocket, WebSocketDisconnect, WebSocketState
 
 from core.routing import core as routing
@@ -39,11 +40,12 @@ from core.http_exceptions import exception_dict
 
 from settings.base import settings
 from utils.module_loading import import_string
+from shortcuts import render
 
 from exceptions.http import HTTPException
 from exceptions.config import ImproperlyConfigured
 from exceptions.http.core import InternalServerError
-
+from exceptions.http.handler import handle_exception
 
 T = TypeVar("T")
 
@@ -313,7 +315,7 @@ class Aquilify:
             if not self.routes:
                 if self.debug:
                     template = pathlib.Path(pathlib.Path.cwd() / '_Templates' / 'default_welcome.html')
-                    response = ...
+                    response = await render(request, template.read_text(), {}, 200)
                 else:
                     response = Response("<h1>Welcome to Aquilify, Your installation successful.</h1><p>You have debug=False in you Aquilify settings, change it to True in use of development for better experiance.")
             for (
@@ -342,7 +344,7 @@ class Aquilify:
                         handler_params = inspect.signature(handler).parameters
 
                         if 'request' in handler_params:
-                            parser = Reqparser()
+                            parser = RequestParser()
 
                             if 'parser' in handler_params:
                                 response = await handler(request, parser=parser, **request.path_params)
@@ -495,12 +497,10 @@ class Aquilify:
                 raise HTTPException(f"Invalid response type: Received {received_type}. Expected types are {expected_types}")
         
         if error_code in exception_dict:
-            if error_code == 404 and self.debug:
-                request: Request = args[0]
-                return Response(debug_404(routing._links, { 'path': request.path, 'client_ip': request.remote_addr, 'user_agent': request.user_agent, 'url': request.url, 'method': request.method }), 404, content_type='text/html')
-            elif error_code == 405 and self.debug:
-                request: Request = args[0]
-                return Response(debug_405({ 'method': request.method, "url": request.url, "client_ip": request.remote_addr, "user_agent": request.user_agent, "allowed_method": args[1]}), 405, content_type='text/html')
+            if error_code == 404:
+                return exception_dict[404]()
+            elif error_code == 405:
+                return exception_dict[405]()
             else:
                 return exception_dict[error_code]()
         else:
