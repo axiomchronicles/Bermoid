@@ -2,8 +2,8 @@ import typing
 import warnings
 from os import PathLike
 
-from aquilify.wrappers import Request
-from aquilify.responses import HTMLResponse
+from wrappers.request import Request
+from wrappers.responses import HTMLResponse
 
 try:
     import jinja2

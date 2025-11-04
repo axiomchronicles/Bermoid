@@ -16,7 +16,7 @@ import typing
 from template.jinja2 import Jinja2Template
 from template.xenarx import XenarxTemplate
 from wrappers.responses import RedirectResponse
-from aquilify.template.builder import TemplateFactory
+from template.builder import TemplateFactory
 from wrappers.request import Request
 
 from settings import settings

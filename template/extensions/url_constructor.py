@@ -2,7 +2,7 @@ from jinja2 import nodes
 from jinja2.ext import Extension
 from urllib.parse import urljoin, urlencode
 
-from ...settings import settings
+from settings import settings
 
 class URLConstructor(Extension):
     tags = {'static', 'redirect', 'media'}

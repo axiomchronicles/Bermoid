@@ -31,6 +31,7 @@ from _types import Scope, Receive, Send, Lifespan, StatefulLifespan, ASGIApp
 from wrappers.request import Request
 from wrappers.response import Response
 from wrappers.parser import RequestParser
+from wrappers.responses import HTMLResponse
 from wrappers.websocket import WebSocket, WebSocketDisconnect, WebSocketState
 
 from core.routing import core as routing
@@ -40,8 +41,6 @@ from core.http_exceptions import exception_dict
 
 from settings.base import settings
 from utils.module_loading import import_string
-from shortcuts import render
-
 from exceptions.http import HTTPException
 from exceptions.config import ImproperlyConfigured
 from exceptions.http.core import InternalServerError
@@ -65,7 +64,7 @@ class ColoursCode:
     BOLD = "\033[1m"
     RESET = "\033[0m" 
 
-class Aquilify:
+class Bermoid:
     def __init__(
         self
         ) -> None:
@@ -314,8 +313,8 @@ class Aquilify:
 
             if not self.routes:
                 if self.debug:
-                    template = pathlib.Path(pathlib.Path.cwd() / '_Templates' / 'default_welcome.html')
-                    response = await render(request, template.read_text(), {}, 200)
+                    template = pathlib.Path(__file__).parent / "_template" / "default_welcome.html"
+                    response = HTMLResponse(content=template.read_text(), status=200)
                 else:
                     response = Response("<h1>Welcome to Aquilify, Your installation successful.</h1><p>You have debug=False in you Aquilify settings, change it to True in use of development for better experiance.")
             for (
@@ -399,19 +398,52 @@ class Aquilify:
         request.context['_app'] = self
 
     async def _process_exception(self, e, request) -> Response:
+        """Centralized exception handler."""
         reversed_exception_dict = {v: k for k, v in exception_dict.items()}
-        if type(e) in reversed_exception_dict:
-            status_code = reversed_exception_dict[type(e)]
-            response = await self._error_validator(status_code, request)
-            return response
-        else:
+        try:
+            # Map known HTTPException -> proper response
+            if type(e) in reversed_exception_dict:
+                status_code = reversed_exception_dict[type(e)]
+                return await self._error_validator(status_code, request)
+
+            # Otherwise, debug mode: show dev traceback
             if self.debug:
-                response = await handle_exception(e, request)
+                try:
+                    return await handle_exception(e, request)
+                except Exception as inner_error:
+                    print(f"[ERROR] Exception while running handle_exception: {inner_error}")
+                    print(traceback.format_exc())
+                    return Response(
+                        f"Internal Error in exception handler: {inner_error}",
+                        content_type="text/plain",
+                        status_code=500,
+                    )
+
+            # Custom exception handlers
             elif self.exception_handlers:
-                response = await self.exception_handlers(e, request)
+                try:
+                    return await self.exception_handlers(e, request)
+                except Exception as inner_error:
+                    print(f"[ERROR] Exception in custom handler: {inner_error}")
+                    print(traceback.format_exc())
+                    return Response(
+                        f"Internal Error in custom handler: {inner_error}",
+                        content_type="text/plain",
+                        status_code=500,
+                    )
+
+            # Fallback
             else:
-                response = await self._error_validator(500)
-        return response
+                return await self._error_validator(500, request)
+
+        except Exception as final_error:
+            print(f"[FATAL] Failed to process exception: {final_error}")
+            print(traceback.format_exc())
+            return Response(
+                "A fatal internal error occurred.",
+                content_type="text/plain",
+                status_code=500,
+            )
     
     def _convert_value(self, value):
         if isinstance(value, int):
@@ -564,35 +596,68 @@ class Aquilify:
                 return response
             
     def _load_exception_handler(self) -> Optional[
-            Mapping[
-                Any,
-                Callable[
-                    [Request, Exception],
-                    Union[Response, Awaitable[Response]],
-                ],
-            ]
-        ]:
+        Mapping[
+            Any,
+            Callable[
+                [Request, Exception],
+                Union[Response, Awaitable[Response]],
+            ],
+        ]
+    ]:
+        exception_handler = getattr(settings, "EXCEPTION_HANDLER", None)
+
+        # Nothing configured
+        if not exception_handler:
+            self.exception_handlers = None
+            return self.exception_handlers
+
         try:
-            exception_handler: Optional[str] = getattr(settings, 'EXCEPTION_HANDLER', None)
-            if exception_handler is not None:
-                if not isinstance(exception_handler, str):
-                    raise ImproperlyConfigured("Invalid exception_handler type, excepted string")
-            if exception_handler:
+            # If a string path was provided, import it
+            if isinstance(exception_handler, str):
                 _handler = import_string(exception_handler)
-                if inspect.isclass(_handler):
-                    self.exception_handlers = _handler()
-                else:
-                    if not (inspect.iscoroutinefunction(_handler) or inspect.isasyncgenfunction(_handler)):
-                        raise TypeError("ASGI can only register asynchronous functions or class of Exception handler.")
-                    self.exception_handlers = _handler
+            # If the setting is a callable (function or class), use it directly
+            elif callable(exception_handler):
+                _handler = exception_handler
             else:
-                self.exception_handlers = None 
-        except ImproperlyConfigured as config_error:
-            raise ImproperlyConfigured(f"Error loading {exception_handler} Exception handler: {config_error}")
+                raise ImproperlyConfigured(
+                    "Invalid EXCEPTION_HANDLER type: expected a string import path or a callable."
+                )
+
+            # If a class was provided, instantiate it (instance must be callable)
+            if inspect.isclass(_handler):
+                instance = _handler()
+                if not callable(instance):
+                    raise TypeError("Exception handler class must return a callable instance.")
+                self.exception_handlers = instance
+
+            # If it's a function/coroutine, ensure it's awaitable by the ASGI flow.
+            else:
+                # If it's an async function / async generator function, use directly
+                if inspect.iscoroutinefunction(_handler) or inspect.isasyncgenfunction(_handler):
+                    self.exception_handlers = _handler
+                else:
+                    # It's a sync callable — wrap it into an async wrapper so callers can `await` it
+                    def _sync_wrapper_factory(func):
+                        async def _async_wrapper(exc: Exception, request: Request):
+                            return func(exc, request)
+                        return _async_wrapper
+
+                    self.exception_handlers = _sync_wrapper_factory(_handler)
+
+            return self.exception_handlers
+
         except ImportError as import_error:
-            raise ImproperlyConfigured(f"Error importing {exception_handler} Exception handler: {import_error}")
+            raise ImproperlyConfigured(
+                f"Error importing EXCEPTION_HANDLER '{exception_handler}': {import_error}"
+            )
+        except ImproperlyConfigured:
+            # Let ImproperlyConfigured bubble up with its original message
+            raise
         except Exception as e:
-            raise ImproperlyConfigured(f"An unexpected error occurred: {e}")
+            raise ImproperlyConfigured(
+                f"An unexpected error occurred while loading EXCEPTION_HANDLER '{exception_handler}': {e}"
+            )
+
         
     async def __call__(
         self, scope: Dict[str, Scope], receive: Callable[..., Awaitable[Receive]], send: Callable[..., Awaitable[Send]]
@@ -613,17 +678,21 @@ class Aquilify:
         receive: Callable[..., Awaitable[Receive]],
         send: Callable[..., Awaitable[Send]]
     ) -> None:
+        """HTTP handler with robust error fallback."""
         try:
             await self.handle_request(scope, receive, send)
         except Exception as e:
-            if self.debug:
+            try:
                 request = Request(scope, receive, send)
-                response = await handle_exception(e, request)
-            elif self.exception_handlers:
-                request = Request(scope, receive, send)
-                response = await self.exception_handlers(e, request)
-            else:
-                response = await self._error_validator(500)
+                response = await self._process_exception(e, request)
+            except Exception as final_e:
+                print(f"[CRITICAL] Exception while handling request: {final_e}")
+                print(traceback.format_exc())
+                response = Response(
+                    "Internal Server Error",
+                    content_type="text/plain",
+                    status_code=500,
+                )
             await response(scope, receive, send)
 
     async def _lifespan(

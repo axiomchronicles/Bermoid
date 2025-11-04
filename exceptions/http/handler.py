@@ -83,7 +83,7 @@ def get_code_lines():
 
 
 async def default_exception_handler(error_message: str, traceback_info: str, code_lines, req_data = None) -> Response:
-    from ..wrappers import Response
+    from wrappers.response import Response
     try:
         formatted_traceback = "<br>".join(html.escape(line) for line in traceback_info.splitlines())
         error_type = traceback_info.splitlines()[-1].split(":")[0].strip()
@@ -117,10 +117,8 @@ def request_data(request: Request = None):
         "Path": request.path,
         "Method": request.method,
         "User-Agent-String": request.user_agent,
-        "Browser": request.user_agent.browser,
-        "Timezone": request.user_agent.timezone,
-        "Language": request.user_agent.language,
-        "Platform": request.user_agent.platform,
+        "Browser": request.user_agent._info.browser,
+        "Platform": request.user_agent._info.device,
         "Query-Params": request.query_params,
         "Base-Url": request.base_url,
         "Origin": request.origin,

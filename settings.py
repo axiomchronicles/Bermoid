@@ -47,7 +47,7 @@ STATIC_CHUNK_SIZE = 65536
 
 STATIC_URL = '/static/'
 
-STATIC_MULTI_URL = [ ] 
+STATIC_MULTI_URLS = [ ] 
 
 STATICFILE_DIRS = [
     os.path.join(BASE_DIR, 'static')
@@ -79,24 +79,25 @@ APPLICATION_DISPATCHER = [ ]
 
 TEMPLATES = [
     {
-        "BACKEND": "aquilify.template.jinja2",
+        "BACKEND": "template.jinja2.Jinja2Template",
         "DIRS": [ os.path.join(BASE_DIR, "templates") ],
-        "CSRF": "aquilify.security.csrf.CSRF",
+        # "CSRF": "aquilify.security.csrf.CSRF",
         "OPTIONS": {
             "autoscape": True,
             "context_processors": [
-                "aquilify.template.context_processors.URLContextProcessor",
-                "aquilify.template.context_processors.CSRFContextView",
-                "aquilify.core.messages.context_processors.Messages",
-                "aquilify.template.context_processors.RequestContext"
+                # "template.context_processors.URLContextProcessor",
+                # "aquilify.template.context_processors.CSRFContextView",
+                # "aquilify.core.messages.context_processors.Messages",
+                "template.context_processors.RequestContext"
             ],
             "extensions": [
-                "aquilify.template.extensions.URLConstructor"
+                "template.extensions.URLConstructor"
             ]
         }
     }
 ]
 
+EXCEPTION_HANDLER = []
 # CSRF Configuration...
 
 # visit :: http://aquilify.vvfin.in/security/csrf

@@ -1,18 +1,13 @@
 from typing import Any, Dict, Optional, Callable
 from markupsafe import Markup
 from html import escape
-from ...settings.xsrf_view import XSRFConfigSettings
 
-try:
-    _config_settings = XSRFConfigSettings()
-    _config_settings.fetch()
-    _settings = _config_settings.template_data[0]
-except Exception as e:
-    raise Exception("Template settings not found in settings.py, configure it before you use.")
+from settings import settings
+
 
 class XSRFContextView:
     def __init__(self) -> None:
-        self.csrf: Optional[Any] = _settings.get('csrf')
+        self.csrf: Optional[Any] = settings.get('csrf')
 
     async def __call__(self, context: Dict[str, Any], request: Any) -> Dict[str, Any]:
         token: Optional[str] = await self._get_csrf_token(request) if self.csrf else None

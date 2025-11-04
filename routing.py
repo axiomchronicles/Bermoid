@@ -1,7 +1,7 @@
-from core.routing import HTTPRouting
+from core.routing.pattern import rule
 
 import main
 
 ROUTER = [
-    HTTPRouting.rule("/", main.main)
+    rule("/", main.main)
 ]

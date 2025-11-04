@@ -1,4 +1,4 @@
-
+from exceptions.http.core import MethodNotAllowed
 
 async def main(request):
-    return {"msg": "hello"}
+    1 

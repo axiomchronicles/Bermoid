@@ -16,18 +16,11 @@ from typing import (
     List
 )
 
-from ..wrappers import Response, Request
-from exceptions.__handler import handle_exception
-
-from ..settings.templates import TemplateConfigSettings
-
-try:
-    _config_settings = TemplateConfigSettings()
-    _config_settings.fetch()
-    _settings = _config_settings.template_data[0]
-except Exception as e:
-    raise Exception("Template settings not found in settings.py, configure it before you use.")
-
+from wrappers.request import Request
+from wrappers.response import Response
+from settings import settings
+from exceptions.http.handler import handle_exception
+from exceptions.config import ImproperlyConfigured
 
 class TemplateResponse:
     def __init__(
@@ -35,18 +28,34 @@ class TemplateResponse:
     ):
         self._check_jinja2_library()
         
-        self.template_paths = _settings.get('dirs') or ["templates"]
-        self.default_context = None or {}
-        self.autoescape = _settings['options'].get('autoscape') or True
-        self.template_engine = _settings.get('backend').lower()
-        self.cache_size = _settings['options'].get('cache_size') or True
-        self.context_processors = _settings['options'].get('context_processors') or []
+        templates = getattr(settings, "TEMPLATES", None)
+        if not templates or not isinstance(templates, (list, tuple)):
+            raise ImproperlyConfigured("TEMPLATES setting not configured or invalid format")
+        
+        _settings = templates[0]
+        
+        # Extract top-level keys
+        backend = _settings.get("BACKEND") or _settings.get("backend")
+        dirs = _settings.get("DIRS") or ["templates"]
+        options = _settings.get("OPTIONS") or {}
+        csrf = _settings.get("CSRF")
+
+        if not backend:
+            raise ImproperlyConfigured("Template backend not defined in TEMPLATES")
+        
+        # Assign attributes with safe defaults
+        self.template_paths = dirs
+        self.default_context = {}
+        self.autoescape = options.get("autoscape", True)
+        self.template_engine = backend.lower()
+        self.cache_size = options.get("cache_size", 400)
+        self.context_processors = options.get("context_processors", [])
         self.flash_config = {'with_category': False, 'category_filter': ()}
-        self.custom_filters = _settings['options'].get('filters') or {}
-        self.custom_globals = _settings['options'].get('globals') or {}
-        self.enable_template_cache = _settings['options'].get('enable_template_cache') or True
-        self.custom_extensions = _settings['options'].get('extensions') or []
-        self.csrf = _settings.get('csrf') or None
+        self.custom_filters = options.get("filters", {})
+        self.custom_globals = options.get("globals", {})
+        self.enable_template_cache = options.get("enable_template_cache", True)
+        self.custom_extensions = options.get("extensions", [])
+        self.csrf = csrf
 
         if self.template_engine not in ["jinja2"]:
             raise ValueError("Unsupported template engine. Currently, only 'jinja2' is supported.")

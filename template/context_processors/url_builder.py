@@ -1,8 +1,8 @@
 from urllib.parse import urlencode
-from ...settings import settings
+from settings import settings
 from typing import Dict, Any, Callable, Union
 
-from ...security.crypter import safe_join
+from security.crypter import safe_join
 
 class EndpointNotFoundError(ValueError):
     pass

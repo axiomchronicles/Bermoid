@@ -1,116 +1,218 @@
-# HTML Exception Content for web rendring...
-
 from __future__ import annotations
 
 def exceptions(error_message: str, formatted_traceback: str, underlined_line: str,
-               error_type: str, file_and_line: str, code_lines: str, system_info: dict, req_data: dict = None):
-    max_key_length = max(len(key) for key in system_info)
-    max_value_length = max(len(str(value)) for value in system_info.values())
-    padding = 4
+               error_type: str, file_and_line: str, code_lines: str,
+               system_info: dict, req_data: dict = None):
 
-    system_info_content = '\n'.join([
-        '{}: {}'.format(key.ljust(max_key_length + padding), str(value).ljust(max_value_length))
-        for key, value in system_info.items()
-    ])
-    
-    req_info = ''
-    if req_data is not None:
-        max_key_req = max(len(key) for key in req_data)
-        max_value_req = max(len(str(value)) for value in req_data.values())
-        req_padding = 4
+    def dict_to_html(data: dict) -> str:
+        return "<table class='info-table'>" + "".join(
+            f"<tr><td class='key'>{k}</td><td class='value'>{v}</td></tr>"
+            for k, v in data.items()
+        ) + "</table>"
 
-        req_info = '\n'.join([
-            '{}: {}'.format(key.ljust(max_key_req + req_padding), str(value).ljust(max_value_req))
-            for key, value in req_data.items()
-        ])
+    system_info_content = dict_to_html(system_info)
+    req_info = dict_to_html(req_data) if req_data else "<p>No request data available</p>"
 
-    html_content = """
-<html>
-<head>
-    <title>{error_type}: {error_message}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-    <style>
-     body {{font-family: Arial, sans-serif;background-color: white;margin: 0;padding: 0;display: flex;justify-content: center;align-items: center;overflow-x: hidden;}}
-    .container {{background-color: white;padding: 20px;text-align: center;width: 100%;max-width: none;height: 100%;max-height: auto;}}h1
-    {{color: black;margin-bottom: 20px;font-family: 'Courier New', monospace;font-size: 32px;}}
-    .error-message {{margin-bottom: 20px;font-size: 18px;font-family: 'Courier New', monospace;white-space: pre-wrap;}}pre 
-    {{white-space: pre-wrap;background-color: #f9f9f9;padding: 15px;border-radius: 3px;border: 1px solid #ddd;text-align: left;font-size: 16px;overflow-y: auto;}}
-    @media (max-width: 768px) {{body {{padding: 20px;height: 120vh;}}h1 {{font-size: 24px;}}.error-message
-    {{font-size: 16px;}}pre {{font-size: 14px;}}.message-tool {{font-size: 14px;}}}}@media (max-width: 480px) 
-    {{body {{padding: 20px;}}h1 {{font-size: 20px;}}.error-message {{font-size: 14px;}}pre {{font-size: 12px;}}.message-tool 
-    {{font-size: 14px;}}}}@media (max-width: 320px) {{body {{padding: 20px;height: auto;}}h1 {{font-size: 18px;}}.error-message 
-    {{font-size: 12px;}}pre {{font-size: 10px;}}.message-tool {{font-size: 14px;}}}}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>{error_type}</h1>
-        <p class='error-message'><b style="color: red;">{error_type}</b>: {error_message}</p>
-        <h2 style="font-family: 'Courier New', monospace;">Traceback</h2>
-        <p style="color: red; font-size: smaller; font-family: 'Courier New', monospace; text-align: left; margin: 10px 0; word-wrap: break-word;">
-            <u style="color: red;">{file_and_line}</u>
-        </p>
-        <pre>Object:{underlined_line}</pre>
-        <h2 style="font-family: 'Courier New', monospace;">Traceback | Formatted</h2>
-        <pre>{formatted_traceback}</pre>
-        <h2 style="font-family: 'Courier New', monospace;">Traceback | Detailed</h2>
-        <pre>{code_lines}</pre>
-        <h2 style="font-family: 'Courier New', monospace;">Request Information</h2>
-        <pre id="systemInfoOutput">{request_info}</pre>
-        <h2 style="font-family: 'Courier New', monospace;">META</h2>
-        <pre id="systemInfoOutput">{system_info_content}</pre>
-        <p class="message-tool" style="text-align: left; color: #2F4F4F;">
-            The Evelax caught an exception in your ASGI application. You can now look at the traceback which led to the error.
-        </p>
-        <p class="message-tool" style="text-align: left; color: #2F4F4F;">
-            A traceback interpreter is a tool that helps developers understand and diagnose errors in their code. It provides a detailed history of function calls leading to an error. Building a custom traceback interpreter offers several advantages:
-        </p>
-        <ul class="message-tool" style="text-align: left; color: #2F4F4F;">
-            <li><b>Traceback Generation:</b> Analyze the call stack to collect function call information.</li>
-            <li><b>Formatting:</b> A human-readable traceback message with error details.</li>
-        </ul>
-        <p class="message-tool" style="text-align: right; color: #708090;">
-            Powered  by <b>Evelax</b>, your friendly <b>Aquilify</b> powered traceback interpreter.
-        </p>
-        <br>
-    </div>
-</body>
-</html>
-""".format(
-        error_type=error_type,
-        error_message=error_message,
-        file_and_line=file_and_line,
-        underlined_line=underlined_line,
-        formatted_traceback=formatted_traceback,
-        code_lines=code_lines,
-        request_info=req_info,
-        system_info_content=system_info_content
-    )
-
-    return html_content
-    
-def show_html_exception(code: int, detail: str, message: str) -> str:
-    html = """<!DOCTYPE html>
+    html_content = f"""
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>%s - %s</title>
-  <style>
-    body{font-family:'Arial',sans-serif;margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background-color:#f5f5f5;}
-    .error-container{text-align:center;background-color:#f5f5f5;padding:40px;border-radius:8px;max-width:80%;}
-    h1{font-size:2.5em;color:#333;margin-bottom:20px;}
-    p{color:#555;font-size:1.2em;margin-bottom:30px;}
-    a{text-decoration:none;background-color:#333;color:#fff;padding:12px 24px;border-radius:5px;transition:background-color 0.3s;}
-    a:hover{background-color:#555;}
-    @media (max-width:768px){.error-container{padding:20px;}h1{font-size:2em;}p{font-size:1em;margin-bottom:20px;}a{padding:10px 20px;}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{error_type}: {error_message}</title>
+<style>
+    :root {{
+        --font: "Inter", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+        --mono: "JetBrains Mono", "SF Mono", "Consolas", monospace;
+
+        --bg: #ffffff;
+        --fg: #1c1e21;
+        --muted: #65676b;
+        --border: #dadce0;
+        --accent: #0866ff;
+        --surface: #f5f6f7;
+        --code-bg: #f8f9fa;
+        --error: #d93025;
+        --error-bg: #fdecea;
+    }}
+    @media (prefers-color-scheme: dark) {{
+        :root {{
+            --bg: #0f0f10;
+            --fg: #e4e6eb;
+            --muted: #b0b3b8;
+            --border: #3a3b3c;
+            --accent: #2d88ff;
+            --surface: #1c1e21;
+            --code-bg: #18191a;
+            --error: #ff6b5a;
+            --error-bg: #2d1615;
+        }}
+    }}
+
+    body {{
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font);
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }}
+
+    header {{
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: fadeDown 0.4s ease;
+    }}
+
+    header h1 {{
+        font-weight: 600;
+        font-size: 18px;
+        color: var(--error);
+        margin: 0;
+    }}
+
+    header span {{
+        font-size: 13px;
+        color: var(--muted);
+    }}
+
+    main {{
+        flex: 1;
+        padding: 24px;
+        animation: fadeIn 0.4s ease;
+    }}
+
+    footer {{
+        border-top: 1px solid var(--border);
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        padding: 12px 0;
+    }}
+
+    h2 {{
+        font-size: 15px;
+        font-weight: 600;
+        margin: 24px 0 12px;
+        color: var(--fg);
+    }}
+
+    pre {{
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 14px 16px;
+        font-family: var(--mono);
+        font-size: 13px;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        line-height: 1.55;
+        color: var(--fg);
+    }}
+
+    /* ===== Syntax Highlighting (pure CSS) ===== */
+    pre .kw {{ color: #d73a49; font-weight: 600; }}       /* Keywords */
+    pre .str {{ color: #0b7500; }}                         /* Strings */
+    pre .num {{ color: #1c00cf; }}                         /* Numbers */
+    pre .com {{ color: #6a737d; font-style: italic; }}     /* Comments */
+    pre .errline {{ background: var(--error-bg); border-left: 3px solid var(--error); padding-left: 12px; display: block; }}
+
+    details {{
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 16px;
+        overflow: hidden;
+    }}
+    details summary {{
+        padding: 12px 16px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--fg);
+        list-style: none;
+        user-select: none;
+    }}
+    details[open] summary {{
+        background: var(--code-bg);
+        border-bottom: 1px solid var(--border);
+        color: var(--accent);
+    }}
+    details > pre, details > div {{
+        padding: 16px;
+    }}
+
+    .info-table {{
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }}
+    .info-table td {{
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+    }}
+    .info-table .key {{
+        color: var(--muted);
+        width: 25%;
+        font-weight: 500;
+    }}
+
+    @keyframes fadeIn {{
+        from {{opacity: 0; transform: translateY(6px);}}
+        to {{opacity: 1; transform: translateY(0);}}
+    }}
+    @keyframes fadeDown {{
+        from {{opacity: 0; transform: translateY(-6px);}}
+        to {{opacity: 1; transform: translateY(0);}}
+    }}
+    ::selection {{
+        background: var(--accent);
+        color: #fff;
+    }}
+</style>
 </head>
-<div class="error-container">
-  <h1>%s - %s</h1>
-  <p>%s</p>
-</div>
+<body>
+<header>
+    <h1>{error_type}</h1>
+    <span>{file_and_line}</span>
+</header>
+
+<main>
+    <section style="margin-bottom: 24px;">
+        <h2>{error_message}</h2>
+        <pre><span class='errline'>{underlined_line}</span></pre>
+    </section>
+
+    <details open>
+        <summary>Formatted Traceback</summary>
+        <pre>{formatted_traceback}</pre>
+    </details>
+
+    <details>
+        <summary>Detailed Traceback</summary>
+        <pre>{code_lines}</pre>
+    </details>
+
+    <details>
+        <summary>Request Information</summary>
+        <div>{req_info}</div>
+    </details>
+
+    <details>
+        <summary>System Information</summary>
+        <div>{system_info_content}</div>
+    </details>
+</main>
+
+<footer>
+    ⚙️ Powered by <b>Evelax</b> • Exception Inspector for <b>Bermoid</b>
+</footer>
 </body>
 </html>
-
-""" % (code, detail, code, detail, message)
-    return html
+"""
+    return html_content
