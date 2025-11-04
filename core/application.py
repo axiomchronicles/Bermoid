@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import inspect
+import pathlib
 import warnings
 import traceback
 import xml.etree.ElementTree as ET
@@ -311,7 +312,8 @@ class Aquilify:
 
             if not self.routes:
                 if self.debug:
-                    response = Response(urlI8N())
+                    template = pathlib.Path(pathlib.Path.cwd() / '_Templates' / 'default_welcome.html')
+                    response = ...
                 else:
                     response = Response("<h1>Welcome to Aquilify, Your installation successful.</h1><p>You have debug=False in you Aquilify settings, change it to True in use of development for better experiance.")
             for (
