@@ -1,0 +1,13 @@
+{
+    "$session": [
+        {
+            "backend": "memory",
+            "cache": true,
+            "encryption": "base64",
+            "$path": [
+                ".aquilify/cache/session/memory/config.json"
+            ]
+        }
+    ],
+    "$compression": []
+}

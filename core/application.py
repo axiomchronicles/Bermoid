@@ -40,7 +40,9 @@ from core.converter import Converter
 from core.http_exceptions import exception_dict
 
 from settings.base import settings
+from settings.handler import StageHandler
 from utils.module_loading import import_string
+
 from exceptions.http import HTTPException
 from exceptions.config import ImproperlyConfigured
 from exceptions.http.core import InternalServerError
@@ -125,8 +127,10 @@ class Bermoid:
                 ],
             ]
         ] = None
+
         self._load_lifespan_handlers()
         self._load_exception_handler()
+        StageHandler().process_stage_handlers(self)
 
     async def _execute_request_stage_handlers(
         self,
@@ -384,6 +388,7 @@ class Bermoid:
 
             response = await self.apply_middlewares(request, response)
             if not isinstance(response, (Response, Awaitable)):
+                print(response)
                 raise ValueError("Middleware must return a Response object or Awaitable[Response]")
             
             await self._execute_request_stage_handlers(RequestStage.AFTER.value, request, response, context=context)

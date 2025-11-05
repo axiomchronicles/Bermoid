@@ -1,0 +1,32 @@
+{
+    "$session": [
+        {
+            "session_id": "9trb99Ha_2ttCL_L_s49ZyDLroCzWdHTYtZs_cH1vf2ZhAXjVDNtqJdFEE0Nn1Op8EnCqTnr5gqEfp87MwaIMA==",
+            "backend": "memory",
+            "cache": true,
+            "encryption": "base64",
+            "timestamp": "2025-11-05 09:57:53"
+        },
+        {
+            "session_id": "qS43G36uBYS9YKa5DlM6BG-lf55cZE5sbBZyDRX2VgwxLMi2ndf9gQbVEDoEgt78vm_QtnI_Y66tMO8lTztc8w==",
+            "backend": "memory",
+            "cache": true,
+            "encryption": "base64",
+            "timestamp": "2025-11-05 09:58:11"
+        },
+        {
+            "session_id": "s8ceKEbH76gbTOY38iA9D2N5l171IOi6x5qx5kz3LXQEASJBbWXHaY0cE0tn_-hKQZMCz4RqbBxZ2v7pUj5lVQ==",
+            "backend": "memory",
+            "cache": true,
+            "encryption": "base64",
+            "timestamp": "2025-11-05 10:10:16"
+        },
+        {
+            "session_id": "YI9fwiQPXz-U4Y6mjYv4hFZ6Oih9ddap1DVdhFhc1KHILOTeE_ZJmRxgYzwz3M3pPAbaiQWOVIi79iv6ol-Xeg==",
+            "backend": "memory",
+            "cache": true,
+            "encryption": "base64",
+            "timestamp": "2025-11-05 10:10:16"
+        }
+    ]
+}

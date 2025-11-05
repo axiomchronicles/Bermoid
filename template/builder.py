@@ -28,7 +28,7 @@ class TemplateBuilder:
     @staticmethod
     def validate_template_backend(backend: str) -> None:
         if backend not in AvailableTemplates._value2member_map_:
-            raise ValueError(f"Template {backend} not supported by AQUILIFY!")
+            raise ValueError(f"Template {backend} not supported by Bermoids!")
 
     @staticmethod
     def import_template_module(backend: str) -> Type:

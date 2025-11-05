@@ -80,7 +80,7 @@ APPLICATION_DISPATCHER = [ ]
 TEMPLATES = [
     {
         "BACKEND": "template.jinja2.Jinja2Template",
-        "DIRS": [ os.path.join(BASE_DIR, "templates") ],
+        "DIRS": [ os.path.join(BASE_DIR, "views") ],
         # "CSRF": "aquilify.security.csrf.CSRF",
         "OPTIONS": {
             "autoscape": True,
@@ -102,18 +102,18 @@ EXCEPTION_HANDLER = []
 
 # visit :: http://aquilify.vvfin.in/security/csrf
 
-CSRF = [
-    {
-        "BACKEND": "aquilify.security.csrf.CSRF",
-        "OPTIONS": {
-            "secret_key": SECRET_KEY,
-            "ip_verification": True,
-            "trusted_ips": ["*"],
-            "protected_methods": ["POST", "PUT", "DELETE"],
-            "cookie_options": {"httponly": True, "secure": True, "samesite": 'strict'}
-        }
-    }
-]
+# CSRF = [
+#     {
+#         "BACKEND": "aquilify.security.csrf.CSRF",
+#         "OPTIONS": {
+#             "secret_key": SECRET_KEY,
+#             "ip_verification": True,
+#             "trusted_ips": ["*"],
+#             "protected_methods": ["POST", "PUT", "DELETE"],
+#             "cookie_options": {"httponly": True, "secure": True, "samesite": 'strict'}
+#         }
+#     }
+# ]
 
 # Middleware configuration...
 
@@ -136,37 +136,39 @@ CSRF = [
 # Unlike core middleware, middleware hooks have the capability to intercept both before and after the request,
 # as well as before and after the response, without any exceptions. This means you can modify the request before serving it.
 
-MIDDLEWARES = [
-    "aquilify.middlewares.XFrameOptionsMiddleware",
-    "aquilify.middlewares.GzipMiddleware",
-    "aquilify.middlewares.StaticMiddleware",
-    "aquilify.middlewares.TrustedhostMiddleware",
-    "aquilify.middlewares.CSRFMiddleware",
-    "aquilify.middlewares.MediaMiddleware",
-    "aquilify.middlewares.ConditionalGetMiddleware",
-    "aquilify.core.messages.middleware.MessageMiddleware",
-]
+# MIDDLEWARES = [
+#     "aquilify.middlewares.XFrameOptionsMiddleware",
+#     "aquilify.middlewares.GzipMiddleware",
+#     "aquilify.middlewares.StaticMiddleware",
+#     "aquilify.middlewares.TrustedhostMiddleware",
+#     "aquilify.middlewares.CSRFMiddleware",
+#     "aquilify.middlewares.MediaMiddleware",
+#     "aquilify.middlewares.ConditionalGetMiddleware",
+#     "aquilify.core.messages.middleware.MessageMiddleware",
+# ]
 
 # stage handlers are the middleware hooks with advance features and configurations...
 # we highly recommend users to use the middleware hooks in place of using regular middleware.
 # For more info visit :: http://aquilify.vvfin.in/middlewares/hooks
 
 STAGE_HANDLERS = [
-    { "origin": "aquilify.core.backend.sessions.InMemorySessionBeforeStage", "stage": "before"},
-    { "origin": "aquilify.core.messages.middleware.MessageBeforeStage", "stage": "before" }
+    { "origin": "core.backend.sessions.InMemorySessionBeforeStage", "stage": "before"},
+    # { "origin": "core.messages.middleware.MessageBeforeStage", "stage": "before" }
 ]
+
+SESSION_CONFIG_SETTINGS = {}
 
 ASGI_MIDDLEWARES = [ ]
 
 ## Database Configuration..
 
-DATABASE = {
-    "default": {
-        "ENGINE": "aquilify.orm.Sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-        "MODELS": [ ]
-    }
-}
+# DATABASE = {
+#     "default": {
+#         "ENGINE": "aquilify.orm.Sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#         "MODELS": [ ]
+#     }
+# }
 
 ### Sessions Configuration....
 
@@ -238,25 +240,25 @@ GZIP_COMPRESSION_FUNCTION = {} # pass the path to cutom compression function... 
 
 # SIGNING BACKEND
 
-SIGNING_BACKEND = "aquilify.core.signing.TimestampSigner"
+SIGNING_BACKEND = "core.signing.TimestampSigner"
 
 
 STORAGE_BACKEND = [
-    {
-        "static": [
-            "aquilify.core.files.storage.FileSystemStorage"
-        ]
-    },
+    # {
+    #     "static": [
+    #         "aquilify.core.files.storage.FileSystemStorage"
+    #     ]
+    # },
     {
         "sessions": {
-            "memory": "aquilify.core.backend.sessions.storage.InMemorySessionStorage",
-            "cookie": "aquilify.core.backend.sessions.storage.CookieSessionStorage"
+            "memory": "core.backend.sessions.storage.InMemorySessionStorage",
+            "cookie": "core.backend.sessions.storage.cookies.CookieSessionStorage"
         }
     }
 ]
 
-MESSAGE_STORAGE = 'aquilify.core.messages.storage.fallback.FallbackStorage'
+# MESSAGE_STORAGE = 'aquilify.core.messages.storage.fallback.FallbackStorage'
 
-ENVIROMENT = {
-    'lxenviroment': ['packlib'] # add all the .lxe file in this list
-}
+# ENVIROMENT = {
+#     'lxenviroment': ['packlib'] # add all the .lxe file in this list
+# }
